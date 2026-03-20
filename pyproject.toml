@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "letmeasc"
+version = "0.1.0"
+description = "Serial login automation and firmware candidate extraction for authorized device assessment."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pyserial>=3.5",
+  "PyYAML>=6.0.1",
+]
+
+[project.scripts]
+letmeasc = "letmeasc.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+
+[tool.setuptools.packages.find]
+where = ["."]

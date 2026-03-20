@@ -1,0 +1,51 @@
+name: example_board
+transcript_path: transcript.log
+
+serial:
+  baud: 115200
+  timeout: 0.2
+  startup_delay: 2.0
+  initial_read_quiet_time: 0.5
+  initial_read_max_total: 2.0
+  inter_attempt_delay: 0.6
+
+connect_steps:
+  - action: read
+    quiet_time: 0.5
+    max_total: 2.0
+
+pre_attempt_steps:
+  - action: flush
+  - action: send
+    text: ".l\n"
+  - action: sleep
+    seconds: 0.3
+  - action: read
+    quiet_time: 0.4
+    max_total: 1.5
+  - action: send
+    text: "4\n"
+  - action: sleep
+    seconds: 0.5
+  - action: wait_for
+    quiet_time: 0.3
+    max_total: 2.5
+    optional: true
+    match:
+      regex: "(Enter the password|Please login|password[:> ]?)"
+
+login:
+  mode: password_only
+  password_prompt:
+    regex: "(Enter the password|Please login|password[:> ]?)"
+  submit_suffix: "\n"
+
+success:
+  - text: "Access Granted"
+
+failure:
+  - text: "Access Denied"
+  - text: "Invalid Input"
+
+interesting:
+  - regex: "(?i)shell|busybox|welcome|last login|#\\s*$|\\$\\s*$"
