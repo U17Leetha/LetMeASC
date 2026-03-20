@@ -5,6 +5,7 @@ from pathlib import Path
 
 import serial
 
+from letmeasc.ports import format_serial_ports
 from letmeasc.profile import (
     LoginConfig,
     MatchRule,
@@ -102,7 +103,19 @@ def run_live_wizard(output_path: str | Path, port: str, baud: int = 115200) -> P
     inter_attempt_delay = ask_float("Delay between attempts", 0.6)
     transcript_path = ask("Transcript log path", "transcript.log")
 
-    ser = serial.Serial(port, baud, timeout=timeout)
+    try:
+        ser = serial.Serial(port, baud, timeout=timeout)
+    except serial.SerialException as exc:
+        message = [f"Could not open serial port {port}: {exc}"]
+        available = format_serial_ports()
+        if available:
+            message.append("")
+            message.append(available)
+        message.append("")
+        message.append(
+            "Tip: on Linux the device is often /dev/ttyACM0 or /dev/ttyUSB0."
+        )
+        raise SystemExit("\n".join(message))
     try:
         time.sleep(startup_delay)
         banner = read_available(ser, quiet_time=0.5, max_total=2.0)

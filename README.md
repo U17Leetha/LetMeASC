@@ -61,6 +61,7 @@ The wizard asks how to reach the login prompt, what prompts look like, and what 
 Create a device profile by connecting to the board and replaying the steps you normally type:
 
 ```bash
+letmeasc ports
 letmeasc learn \
   --port /dev/ttyACM0 \
   --baud 115200 \

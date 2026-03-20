@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 
 from letmeasc.firmware import extract_strings, score_candidates, write_wordlists
+from letmeasc.ports import format_serial_ports
 from letmeasc.profile import load_profile
 from letmeasc.serial_engine import SerialRunner, build_credentials
 from letmeasc.wizard import run_live_wizard, run_wizard
@@ -30,12 +31,14 @@ def main() -> None:
         help="Path for the generated YAML profile",
     )
 
+    subparsers.add_parser("ports", help="List detected serial ports")
+
     learn_parser = subparsers.add_parser(
         "learn",
         help="Connect to a serial device and build a profile from observed steps",
     )
     learn_parser.add_argument(
-        "--port", required=True, help="Serial device path, for example /dev/ttyACM1"
+        "--port", required=True, help="Serial device path, for example /dev/ttyACM0"
     )
     learn_parser.add_argument(
         "--baud", type=int, default=115200, help="Serial baud rate"
@@ -78,6 +81,10 @@ def main() -> None:
 
     if args.command == "wizard":
         run_wizard(args.output)
+        return
+
+    if args.command == "ports":
+        print(format_serial_ports())
         return
 
     if args.command == "learn":

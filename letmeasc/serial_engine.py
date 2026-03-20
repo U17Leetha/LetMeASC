@@ -8,6 +8,7 @@ from typing import Iterable
 
 import serial
 
+from letmeasc.ports import format_serial_ports
 from letmeasc.profile import LoginConfig, MatchRule, Profile, Step
 
 
@@ -33,12 +34,26 @@ class SerialRunner:
         self.transcript_path.parent.mkdir(parents=True, exist_ok=True)
         self._transcript = self.transcript_path.open("a", encoding="utf-8")
 
-    def run(self, credentials: Iterable[Credential], dry_run: bool = False) -> AttemptResult | None:
-        ser = serial.Serial(
-            self.port,
-            self.profile.serial.baud,
-            timeout=self.profile.serial.timeout,
-        )
+    def run(
+        self, credentials: Iterable[Credential], dry_run: bool = False
+    ) -> AttemptResult | None:
+        try:
+            ser = serial.Serial(
+                self.port,
+                self.profile.serial.baud,
+                timeout=self.profile.serial.timeout,
+            )
+        except serial.SerialException as exc:
+            message = [f"Could not open serial port {self.port}: {exc}"]
+            available = format_serial_ports()
+            if available:
+                message.append("")
+                message.append(available)
+            message.append("")
+            message.append(
+                "Tip: on Linux the device is often /dev/ttyACM0 or /dev/ttyUSB0."
+            )
+            raise SystemExit("\n".join(message))
         try:
             time.sleep(self.profile.serial.startup_delay)
             banner = self.read_available(
@@ -114,24 +129,36 @@ class SerialRunner:
         if login_cfg is None:
             raise ValueError("profile is missing login configuration")
 
-        if login_cfg.mode in {"username_only", "username_password"} and credential.username is not None:
+        if (
+            login_cfg.mode in {"username_only", "username_password"}
+            and credential.username is not None
+        ):
             self._wait_for_prompt(ser, login_cfg.username_prompt, "username")
             ser.write((credential.username + login_cfg.submit_suffix).encode())
 
-        if login_cfg.mode in {"password_only", "username_password"} and credential.password is not None:
+        if (
+            login_cfg.mode in {"password_only", "username_password"}
+            and credential.password is not None
+        ):
             self._wait_for_prompt(ser, login_cfg.password_prompt, "password")
             ser.write((credential.password + login_cfg.submit_suffix).encode())
 
         response = self.read_available(ser, quiet_time=0.5, max_total=2.5)
         return response
 
-    def _wait_for_prompt(self, ser: serial.Serial, rule: MatchRule | None, label: str) -> None:
+    def _wait_for_prompt(
+        self, ser: serial.Serial, rule: MatchRule | None, label: str
+    ) -> None:
         if rule is None:
             return
-        matched = self.wait_for(ser, rule, quiet_time=0.25, max_total=5.0, optional=False)
+        matched = self.wait_for(
+            ser, rule, quiet_time=0.25, max_total=5.0, optional=False
+        )
         self._log("prompt", f"{label}: {matched}")
 
-    def read_available(self, ser: serial.Serial, quiet_time: float = 0.4, max_total: float = 2.0) -> str:
+    def read_available(
+        self, ser: serial.Serial, quiet_time: float = 0.4, max_total: float = 2.0
+    ) -> str:
         data = b""
         start = time.time()
         last_data = start
@@ -162,7 +189,9 @@ class SerialRunner:
         text = ""
         start = time.time()
         while time.time() - start < max_total:
-            text += self.read_available(ser, quiet_time=quiet_time, max_total=quiet_time + 0.1)
+            text += self.read_available(
+                ser, quiet_time=quiet_time, max_total=quiet_time + 0.1
+            )
             if rule is None or matches_rule(text, rule):
                 return text
         if optional:
@@ -172,7 +201,9 @@ class SerialRunner:
     def _log(self, kind: str, text: str) -> None:
         if not text:
             return
-        self._transcript.write(f"\n[{kind}] {time.strftime('%Y-%m-%d %H:%M:%S')}\n{text}\n")
+        self._transcript.write(
+            f"\n[{kind}] {time.strftime('%Y-%m-%d %H:%M:%S')}\n{text}\n"
+        )
         self._transcript.flush()
 
 
@@ -214,7 +245,11 @@ def build_credentials(
         return [Credential(username=value) for value in usernames]
     if mode == "username_password":
         if usernames and passwords:
-            return [Credential(username=user, password=password) for user in usernames for password in passwords]
+            return [
+                Credential(username=user, password=password)
+                for user in usernames
+                for password in passwords
+            ]
         if passwords:
             return [Credential(password=password) for password in passwords]
         return [Credential(username=user) for user in usernames]
