@@ -9,7 +9,23 @@ The tool now includes an interactive wizard so you do not have to hand-edit YAML
 
 ## Install
 
-If you already use `pythos`, the easiest setup is:
+Fastest install:
+
+```bash
+cd /Users/matt/Development/LetMeASC
+./install.sh
+```
+
+That will:
+
+- create or reuse `.venv`
+- install Python dependencies
+- install `LetMeASC` in editable mode
+- create a `letmeasc` launcher in `~/.local/bin`
+
+If `~/.local/bin` is not on your `PATH`, the installer tells you exactly what to add.
+
+If you already use `pythos`, the shell-activated setup is still available:
 
 ```bash
 cd /Users/matt/Development/LetMeASC
